@@ -1,0 +1,10 @@
+Package: EMmix
+Title: Expectation Maximization for Ancestry Mixtures
+Version: 0.0.0.9000
+Authors@R: person("Sam", "May", email = "spmay523@gmail.com", role = c("aut", "cre"))
+Description: This package applies the expectation maximization algorithm to estimate the proportions of ancestries present in a set of observed allele frequencies by using a reference dataset of the allele frequencies at the same genetic markers.
+Depends: R (>= 3.4.2)
+License: Not Sure
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.1.0
