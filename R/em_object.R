@@ -48,11 +48,15 @@ setMethod("plot",
             last_iter <- nrow(x@med)
             pops <- x@pnames[,1]
             for(p in pops){
-              xmin <- min(x@med[,p])
-              xmax <- max(x@med[,p])
+              xmin <- min(x@med[,p], x@mu[,p])
+              xmax <- max(x@med[,p], x@mu[,p])
               last <- x@med[last_iter,p]
-              plot.default(x=x@med[,p], main=p, xlab="Iteration Number", ylab = "Median Mixture Parameter", ylim=c(xmin,xmax),type="p")
+              lastMu <- x@mu[last_iter,p]
+              plot.default(x=x@med[,p], main=p, xlab="Iteration Number", ylab = "Mixture Proportion", ylim=c(xmin,xmax),
+                           type="p",col="firebrick1", pch=0)
               abline(h=last, lty=2, col="firebrick1")
+              points(x@mu[,p], col="blue", pch=1)
+              abline(h=lastMu, lty=3, col="blue")
             }
           }
 )
