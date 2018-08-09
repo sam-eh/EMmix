@@ -21,12 +21,46 @@ em_mix_known(x, dat, pnames, pi_init, Ntot, threshold = 0.01,
 \item{threshold}{numeric vector of length 1 indicating when to terminate the loop. The loop will terminate when the sum of the absolute differences between the previous and current estimates for the population mixture is less than \code{threshold}.}
 
 \item{MAF_thresh}{numeric vector of length 1 with value between 0 and 0.5 indicating when to exclude a marker due to rarity (currently not implemented).}
-
-\item{path}{gives a file path name for the directory where tables of outputs from the iterations should be written.}
 }
 \value{
 EMmix object recording the iteration results from the function.
 }
 \description{
 Implements the EM algorithm to estimate the mixture parameters of ancestries in an observed dataset using a reference dataset of some sort.
+}
+\examples{
+n <- 3000 #set number of markers to simulate
+num_pop <- 5000 #set population size for observed data to be passed as x to em_mix_known
+dat <- data.frame(AFR_AF = runif(n=n), NFE_AF = runif(n=n)) # simulate allele frequencies to be used for the reference dataset
+l <- nrow(dat)
+popNames <- c("AFR", "NFE")
+hardyWeinNames <- paste(rep(popNames, each = 3), c("_hom","_het","_homref"),sep="")
+dat_hardyWein <- as.data.frame(matrix(nrow=l, ncol=length(hardyWeinNames), dimnames = list(c(),hardyWeinNames)))
+pnames <- matrix(nrow = length(popNames), ncol=4, dimnames = list(popNames, c()))
+for(pop in popNames){
+  column <- dat[,paste(pop, "_AF", sep = "")]
+  # assume hardy-weinberg equilibrium
+  hom <- column ^ 2
+  het <- 2 * column * (1-column)
+  homref <- (1-column)^2
+  cols <- paste(rep(pop, each = 3), c("_hom","_het","_homref"),sep="")
+  dat_hardyWein[,cols] <- cbind(hom, het, homref)
+  pnames[pop,] <- c(pop, cols)
+}
+real_pi <- c(0.4,0.6) #set the real proportions expected for the simulated observed data
+pop_number <- n  * real_pi
+names(pop_number) <- popNames
+names(real_pi) <- popNames
+pop_sim<-as.data.frame(matrix(nrow = l, ncol = 0))
+for(pop in popNames){
+  popDat <- dat_hardyWein[,paste(rep(pop, each = 3), c("_hom","_het","_homref"),sep="")]
+  pop_sim <<- cbind(pop_sim, t(apply(popDat, 1, function(pd){rmultinom(n=1, size = pop_number[pop], prob = pd)})))
+}
+# next need to get the overall frequency from the simulated columns
+sim_x <- data.frame(hom = apply(pop_sim[,which(1:(3 * length(popNames)) \%\% 3 == 1)], 1, sum),
+                    het = apply(pop_sim[,which(1:(3 * length(popNames)) \%\% 3 == 2)], 1, sum),
+                    homref = apply(pop_sim[,which(1:(3 * length(popNames)) \%\% 3 == 0)], 1, sum)
+)
+mixture <- EMmix::em_mix_known(x = sim_x, dat = dat_hardyWein, pnames = pnames, pi_init = c(0.1,0.9), Ntot = NA)
+#' @export
 }
