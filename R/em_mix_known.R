@@ -8,7 +8,7 @@
 #' @param pi_init numeric vector of length K providing initial mixture parameters.
 #' @param threshold numeric vector of length 1 indicating when to terminate the loop. The loop will terminate when the sum of the absolute differences between the previous and current estimates for the population mixture is less than \code{threshold}.
 #' @param dat data.frame object for frequencies by each population. This is the reference dataset that will be used.
-#' @param Ntot total number of population considered for x.
+#' @param Ntot total number of population considered for x
 #' @return EMmix object recording the iteration results from the function.
 #' @examples
 #' n <- 3000 #set number of markers to simulate
@@ -45,7 +45,7 @@
 #' )
 #' mixture <- EMmix::em_mix_known(x = sim_x, dat = dat_hardyWein, pnames = pnames, pi_init = c(0.1,0.9), Ntot = NA)
 #' #' @export
-em_mix_known <- function(x, dat, pnames, pi_init, Ntot, threshold = 0.01, MAF_thresh = 0.05, path = NA){
+em_mix_known <- function(x, dat, pnames, pi_init, Ntot = NA, threshold = 0.01, MAF_thresh = 0.05, path = NA){
   pi_out <- pi_out_median <- pi_out_90 <- pi_new <- pi_median <- pi_90 <- pi <- pi_init
   names(pi_median) <- names(pi_new) <- names(pi_90) <- names(pi) <- pnames[,1]
   k <- nrow(pnames)
@@ -63,7 +63,7 @@ em_mix_known <- function(x, dat, pnames, pi_init, Ntot, threshold = 0.01, MAF_th
         apply(pnames, 1, function(pop){
           x.p <- cbind(x, p[,pop[2:ncol(pnames)]])
           apply(x.p, 1, function(gen){
-            pi[pop[1]]*dmultinom(as.numeric(gen[1:(ncol(pnames)-1)]), prob = gen[ncol(pnames):(2 * (ncol(pnames)-1))], log = T)
+            log(pi[pop[1]])+dmultinom(as.numeric(gen[1:(ncol(pnames)-1)]), prob = gen[ncol(pnames):(2 * (ncol(pnames)-1))], log = T)
           })
         })
       )
@@ -76,6 +76,9 @@ em_mix_known <- function(x, dat, pnames, pi_init, Ntot, threshold = 0.01, MAF_th
       names(pi_median) <- names(pi)
       pi_90<-apply(gamma_tmp,2,function(x){quantile(x, probs=0.90,na.rm=T)})
       names(pi_90) <- names(pi)
+      
+      # normalize pi_new
+      pi_new <- pi_new/sum(pi_new)
 
       pi_out<-rbind(pi_out, pi_new)
       pi_out_median<-rbind(pi_out_median, pi_median)
@@ -93,7 +96,7 @@ em_mix_known <- function(x, dat, pnames, pi_init, Ntot, threshold = 0.01, MAF_th
       gamma_tmp.a <- cbind(
         apply(pnames, 1, function(pop){
           x.p <- cbind(x, p[,pop[2:ncol(pnames)]])
-          pi[pop[1]]*dbinom(x = x.p[,1], size = Ntot, prob = x.p[,2], log = TRUE) # this only works when x is given as integers and not frequencies
+          log(pi[pop[1]])+dbinom(x = x.p[,1], size = Ntot, prob = x.p[,2], log = TRUE) # this only works when x is given as integers and not frequencies
         })
       )
       gamma_tmp<-gamma_tmp.a/apply(gamma_tmp.a,1,function(x){sum(x, na.rm=T)})
@@ -104,6 +107,9 @@ em_mix_known <- function(x, dat, pnames, pi_init, Ntot, threshold = 0.01, MAF_th
       pi_median<-apply(gamma_tmp,2,function(x){median(x, na.rm=T)})
       pi_90<-apply(gamma_tmp,2,function(x){quantile(x, probs=0.90,na.rm=T)})
 
+      # normalize pi_new
+      pi_new <- pi_new/sum(pi_new)
+      
       pi_out<-rbind(pi_out, pi_new)
       pi_out_median<-rbind(pi_out_median, pi_median)
       pi_out_90<-rbind(pi_out_90, pi_90)
